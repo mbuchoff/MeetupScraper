@@ -2,7 +2,7 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
   <MonoDevelop.Ide.Workbench ActiveDocument="MeetupScraper/MainWindow.cs">
     <Files>
-      <File FileName="MeetupScraper/MainWindow.cs" Line="171" Column="1" />
+      <File FileName="MeetupScraper/MainWindow.cs" Line="13" Column="7" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
