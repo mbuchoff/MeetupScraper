@@ -13,158 +13,6 @@ using Newtonsoft.Json;
 using ICSharpCode.SharpZipLib.Zip;
 using SystemPath = System.IO.Path;
 
-public class MeetupGroup
-{
-	public int id;
-	public string name;
-	public string link;
-	public string urlname;
-	public string description;
-	public long created;
-	public string city;
-	public string country;
-	public string state;
-	public string join_mode;
-	public string visibility;
-	public double lat, lon;
-	public int members;
-	public class MeetupMember
-	{
-		public int id;
-		public string name;
-		public string bio;
-		public MeetupPhoto photo;
-	}
-	public class MeetupPhoto
-	{
-		public int id;
-		public string highres_link;
-		public string photo_link;
-		public string thumb_link;
-	}
-	public MeetupMember organizer;
-	public string who;
-	public MeetupPhoto group_photo;
-	public string timezone;
-	public class MeetupEvent
-	{
-		public string id;
-		public string name;
-		public int yes_rsvp_count;
-		public long time;
-		public int utc_offset;
-	}
-	public MeetupEvent nextEvent;
-	public MeetupCategory category;
-	public class MeetupCategory
-	{
-		public int id;
-		public string name;
-		public string shortname;
-	}
-	public MeetupPhoto [] photos;
-}
-
-public class JsonMeetupEvents
-{
-	public MeetupEvent [] results;
-	public class MeetupEvent
-	{
-		public int utc_offset;
-		public int headcount;
-		public string visibility;
-		public int waitlist_count;
-		public long created;
-		public class Rating
-		{
-			public int count;
-			public double average;
-		}
-		public Rating rating;
-		public int maybe_rsvp_count;
-		public string description;
-		public string event_url;
-		public int yes_rsvp_count;
-		public string name;
-		public string id;
-		public long time;
-		public long updated;
-		public class MeetupGroup
-		{
-			public string join_mode;
-			public long created;
-			public string name;
-			public double group_lon;
-			public int id;
-			public string urlname;
-			public double group_lat;
-			public string who;
-		}
-		public MeetupGroup group;
-		public string status;
-	}
-	public class Meta
-	{
-		public string next;
-		public string method;
-		public int total_count;
-		public string link;
-		public int count;
-		public string description;
-		public string lon;
-		public string title;
-		public string url;
-		public string id;
-		public long updated;
-		public string lat;
-	}
-	public Meta meta;
-}
-
-public class JsonMeetupPhoto
-{
-	public string id;
-	public string highres_link;
-	public string photo_link;
-	public string thumb_link;
-	public string link;
-	public long created;
-	public long updated;
-	public int utc_offset;
-	public class Member
-	{
-		public int id;
-		public string name;
-		public string bio;
-		public class Photo
-		{
-			public int id;
-			public string highres_link;
-			public string photo_link;
-			public string thumb_link;
-		}
-		public Photo photo;
-
-		public class PhotoAlbum
-		{
-			public int id;
-			public string title;
-//			public class Event
-//			{
-//				public string id;
-//				public string name;
-//				public int yes_rsvp_count;
-//				public long time;
-//				public int utc_offset;
-//			}
-//			Event event;
-		}
-		public PhotoAlbum photo_album;
-	}
-
-	public Member member;
-}
-
 public partial class MainWindow: Gtk.Window
 {	
 	private string getJsonFromUrl(string url)
@@ -226,7 +74,7 @@ public partial class MainWindow: Gtk.Window
 	{
 		if (continueDownloading)
 		{
-			MeetupGroup meetupGroup = JsonConvert.DeserializeObject<MeetupGroup> (getJsonFromUrl ("https://api.meetup.com/YoungOutdoorAdventurersofOrlando?photo-host=public&sig_id=3080124&sig=a585449de92e7c85f06e242e595b375697aa3805"));
+			JsonMeetupGroup meetupGroup = JsonConvert.DeserializeObject<JsonMeetupGroup> (getJsonFromUrl ("https://api.meetup.com/YoungOutdoorAdventurersofOrlando?photo-host=public&sig_id=3080124&sig=a585449de92e7c85f06e242e595b375697aa3805"));
 			JsonMeetupEvents meetupEvents = JsonConvert.DeserializeObject<JsonMeetupEvents> (getJsonFromUrl ("https://api.meetup.com/2/events?&sign=true&photo-host=public&group_urlname=" + meetupGroup.urlname + "&group_id=" + meetupGroup.id + "&status=past&page=20"));
 			int totalMeetupEvents = meetupEvents.meta.total_count;
 			int meetupeventsProcessed = 0;
@@ -289,7 +137,7 @@ public partial class MainWindow: Gtk.Window
 
 								if (createdDirectory)
 								{
-									CompressDirectory (directory, directory + ".zip");
+									//CompressDirectory (directory, directory + ".zip");
 								}
 							}
 						}
