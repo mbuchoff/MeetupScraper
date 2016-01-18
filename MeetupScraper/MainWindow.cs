@@ -33,73 +33,82 @@ public partial class MainWindow: Gtk.Window
 
 	void DownloadMeetups()
 	{
-		if (continueDownloading)
+		using (StreamWriter logFile = File.AppendText("log.txt"))
 		{
-			JsonMeetupGroup meetupGroup = JsonConvert.DeserializeObject<JsonMeetupGroup> (getJsonFromUrl ("https://api.meetup.com/YoungOutdoorAdventurersofOrlando?photo-host=public&sig_id=3080124&sig=a585449de92e7c85f06e242e595b375697aa3805"));
-			JsonMeetupEvents meetupEvents = JsonConvert.DeserializeObject<JsonMeetupEvents> (getJsonFromUrl ("https://api.meetup.com/2/events?&sign=true&photo-host=public&group_urlname=" + meetupGroup.urlname + "&group_id=" + meetupGroup.id + "&status=past&page=20"));
-			int totalMeetupEvents = meetupEvents.meta.total_count;
-			int meetupeventsProcessed = 0;
-
-			List<string> eventIds = new List<string> ();
-
-			using (WebClient client = new WebClient())
+			logFile.AutoFlush = true;
+			if (continueDownloading)
 			{
-				for (int eventOffset = 0; eventOffset*200 < totalMeetupEvents; eventOffset++)
+				JsonMeetupGroup meetupGroup = JsonConvert.DeserializeObject<JsonMeetupGroup> (getJsonFromUrl ("https://api.meetup.com/YoungOutdoorAdventurersofOrlando?photo-host=public&sig_id=3080124&sig=a585449de92e7c85f06e242e595b375697aa3805"));
+				JsonMeetupEvents meetupEvents = JsonConvert.DeserializeObject<JsonMeetupEvents> (getJsonFromUrl ("https://api.meetup.com/2/events?&sign=true&photo-host=public&group_urlname=" + meetupGroup.urlname + "&group_id=" + meetupGroup.id + "&status=past&page=20"));
+				int totalMeetupEvents = meetupEvents.meta.total_count;
+				int meetupeventsProcessed = 0;
+
+				List<string> eventIds = new List<string> ();
+
+				using (WebClient client = new WebClient())
 				{
-					if (continueDownloading)
+					for (int eventOffset = 0; eventOffset*200 < totalMeetupEvents; eventOffset++)
 					{
-						meetupEvents = JsonConvert.DeserializeObject<JsonMeetupEvents> (getJsonFromUrl ("https://api.meetup.com/2/events?&sign=true&photo-host=public&group_id=" + meetupGroup.id + "&status=past&page=200&offset=" + eventOffset));
-
-						foreach (JsonMeetupEvents.MeetupEvent meetupEvent in meetupEvents.results)
+						if (continueDownloading)
 						{
-							meetupeventsProcessed++;
-							progressbar1.Fraction = (float)meetupeventsProcessed / totalMeetupEvents;
-							label1.Text = "Downloading photos from " + meetupEvent.name;
+							meetupEvents = JsonConvert.DeserializeObject<JsonMeetupEvents> (getJsonFromUrl ("https://api.meetup.com/2/events?&sign=true&photo-host=public&group_id=" + meetupGroup.id + "&status=past&page=200&offset=" + eventOffset));
 
-							bool createdDirectory = false;
-							eventIds.Add (meetupEvent.id);
-							int seconds = (int)(meetupEvent.time / 1000);
-
-							DateTime epoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-							DateTime eventTime = epoch.AddSeconds (seconds);
-
-							string meetupEventName = meetupEvent.name.Replace ('/', '_').Replace ('\\', '_');
-							string eventTimeString = eventTime.ToString ("yyyy-MM-dd h:mm tt", CultureInfo.InvariantCulture);
-							string directory = "/home/mbuchoff/Pictures/" + eventTimeString + " - " + meetupEventName;
-
-							if (continueDownloading)
+							foreach (JsonMeetupEvents.MeetupEvent meetupEvent in meetupEvents.results)
 							{
-								JsonPhotoAlbums photoAlbums = JsonConvert.DeserializeObject<JsonPhotoAlbums> (getJsonFromUrl ("https://api.meetup.com/2/photo_albums?&sign=true&photo-host=public&group_id=" + meetupGroup.id + "&event_id=" + meetupEvent.id + "&page=20"));
+								meetupeventsProcessed++;
+								progressbar1.Fraction = (float)meetupeventsProcessed / totalMeetupEvents;
+								label1.Text = "Downloading photos from " + meetupEvent.name;
 
-								for (int photoAlbumIndex = 0; photoAlbumIndex < photoAlbums.meta.total_count; photoAlbumIndex++)
+								bool createdDirectory = false;
+								eventIds.Add (meetupEvent.id);
+								int seconds = (int)(meetupEvent.time / 1000);
+
+								DateTime epoch = new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+								DateTime eventTime = epoch.AddSeconds (seconds);
+
+								string meetupEventName = meetupEvent.name.Replace ('/', '_').Replace ('\\', '_');
+								string eventTimeString = eventTime.ToString ("yyyy-MM-dd h:mm tt", CultureInfo.InvariantCulture);
+
+								logFile.Write("Processing " + eventTimeString + " - " + meetupEventName + "...");
+
+								string directory = "/home/mbuchoff/Pictures/" + eventTimeString + " - " + meetupEventName;
+
+								if (continueDownloading)
 								{
-									JsonPhotoAlbums.PhotoAlbum photoAlbum = photoAlbums.results [photoAlbumIndex];
-									int totalPhotos = photoAlbum.photo_count;
+									JsonPhotoAlbums photoAlbums = JsonConvert.DeserializeObject<JsonPhotoAlbums> (getJsonFromUrl ("https://api.meetup.com/2/photo_albums?&sign=true&photo-host=public&group_id=" + meetupGroup.id + "&event_id=" + meetupEvent.id + "&page=20"));
 
-									for (int photoOffset = 0; photoOffset*20 < totalPhotos && continueDownloading; photoOffset++)
+									for (int photoAlbumIndex = 0; photoAlbumIndex < photoAlbums.meta.total_count; photoAlbumIndex++)
 									{
-										JsonMeetupPhoto[] photos = JsonConvert.DeserializeObject<JsonMeetupPhoto[]> (getJsonFromUrl ("https://api.meetup.com/YoungOutdoorAdventurersofOrlando/photo_albums/" + photoAlbum.photo_album_id + "/photos?&sign=true&photo-host=public&page=20&offset=" + photoOffset));
+										JsonPhotoAlbums.PhotoAlbum photoAlbum = photoAlbums.results [photoAlbumIndex];
+										int totalPhotos = photoAlbum.photo_count;
 
-										foreach (JsonMeetupPhoto photo in photos)
+										for (int photoOffset = 0; photoOffset*20 < totalPhotos && continueDownloading; photoOffset++)
 										{
-											if (!createdDirectory)
-											{
-												Directory.CreateDirectory (directory);
-												createdDirectory = true;
-											}
+											JsonMeetupPhoto[] photos = JsonConvert.DeserializeObject<JsonMeetupPhoto[]> (getJsonFromUrl ("https://api.meetup.com/YoungOutdoorAdventurersofOrlando/photo_albums/" + photoAlbum.photo_album_id + "/photos?&sign=true&photo-host=public&page=20&offset=" + photoOffset));
 
-											if (continueDownloading)
+											foreach (JsonMeetupPhoto photo in photos)
 											{
-												client.DownloadFile (photo.highres_link, directory + "/" + photo.id + ".jpeg");
+												if (!createdDirectory)
+												{
+													Directory.CreateDirectory (directory);
+													createdDirectory = true;
+												}
+
+												if (continueDownloading)
+												{
+													client.DownloadFile (photo.highres_link, directory + "/" + photo.id + ".jpeg");
+												}
 											}
 										}
 									}
+
+									if (createdDirectory)
+									{
+										CompressDirectory (directory, directory + ".zip");
+									}
 								}
 
-								if (createdDirectory)
-								{
-									//CompressDirectory (directory, directory + ".zip");
-								}
+								logFile.WriteLine ();
 							}
 						}
 					}
